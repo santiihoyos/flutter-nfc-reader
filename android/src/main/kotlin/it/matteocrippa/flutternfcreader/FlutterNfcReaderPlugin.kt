@@ -7,9 +7,9 @@ import android.nfc.NfcManager
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import io.flutter.plugin.common.EventChannel
-import io.flutter.plugin.common.EventChannel.StreamHandler
-import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -37,6 +37,8 @@ class FlutterNfcReaderPlugin(val registrar: Registrar) : MethodCallHandler, Even
 
     private var READER_FLAGS = NfcAdapter.FLAG_READER_NFC_A
 
+    private lateinit var handler: Handler
+
     companion object {
         @JvmStatic
         fun registerWith(registrar: Registrar): Unit {
@@ -52,6 +54,7 @@ class FlutterNfcReaderPlugin(val registrar: Registrar) : MethodCallHandler, Even
     init {
         nfcManager = activity.getSystemService(Context.NFC_SERVICE) as? NfcManager
         nfcAdapter = nfcManager?.defaultAdapter
+        handler = Handler(Looper.getMainLooper())
     }
 
     override fun onMethodCall(call: MethodCall, result: Result): Unit {
@@ -88,19 +91,19 @@ class FlutterNfcReaderPlugin(val registrar: Registrar) : MethodCallHandler, Even
 
     // EventChannel.StreamHandler methods
     override fun onListen(arguments: Any?, eventSink: EventChannel.EventSink?) {
-      this.eventSink = eventSink
+        this.eventSink = eventSink
     }
 
     override fun onCancel(arguments: Any?) {
-      eventSink = null
-      stopNFC()
+        eventSink = null
+        stopNFC()
     }
 
     private fun startNFC(): Boolean {
         isReading = if (nfcAdapter?.isEnabled == true) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                nfcAdapter?.enableReaderMode(registrar.activity(), this, READER_FLAGS, null )
+                nfcAdapter?.enableReaderMode(registrar.activity(), this, READER_FLAGS, null)
             }
 
             true
@@ -126,14 +129,14 @@ class FlutterNfcReaderPlugin(val registrar: Registrar) : MethodCallHandler, Even
         // read NDEF message
         ndef?.connect()
         val message = ndef?.ndefMessage
-                          ?.toByteArray()
-                          ?.toString(Charset.forName("UTF-8")) ?: ""
+            ?.toByteArray()
+            ?.toString(Charset.forName("UTF-8")) ?: ""
         //val id = tag?.id?.toString(Charset.forName("ISO-8859-1")) ?: ""
         val id = bytesToHexString(tag?.id) ?: ""
         ndef?.close()
         if (message != null) {
             val data = mapOf(kId to id, kContent to message, kError to "", kStatus to "read")
-            eventSink?.success(data)
+            handler.post { eventSink?.success(data) }
         }
     }
 
