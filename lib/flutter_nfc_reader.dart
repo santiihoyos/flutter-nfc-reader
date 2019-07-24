@@ -53,26 +53,16 @@ class NfcData {
 }
 
 class FlutterNfcReader {
-  static const MethodChannel _channel =
-      const MethodChannel('flutter_nfc_reader');
-  static const stream =
-      const EventChannel('it.matteocrippa.flutternfcreader.flutter_nfc_reader');
+  static const MethodChannel _channel = const MethodChannel('flutter_nfc_reader');
 
-  static Stream<NfcData> get read {
-    final resultStream = _channel
-        .invokeMethod('NfcRead')
-        .asStream()
-        .asyncExpand((_) => stream
-            .receiveBroadcastStream()
-            .map((result) => NfcData.fromMap(result)));
-    return resultStream;
+  static Future<NfcData> read() async {
+    final resultStream = await _channel.invokeMethod('NfcRead');
+    return Future.value(NfcData.fromMap(resultStream));
   }
 
   static Future<NfcData> get stop async {
     final Map data = await _channel.invokeMethod('NfcStop');
-
     final NfcData result = NfcData.fromMap(data);
-
     return result;
   }
 }
