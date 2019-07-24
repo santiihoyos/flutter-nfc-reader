@@ -100,7 +100,7 @@ class FlutterNfcReaderPlugin(val registrar: Registrar) : MethodCallHandler, Even
         ndef?.close()
         if (message.isNotEmpty()) {
             val data = mapOf(kId to id, kContent to message, kError to "", kStatus to "read")
-            pendingResult?.success(data);
+            activity.runOnUiThread { pendingResult?.success(data) }
         }
     }
 
