@@ -100,6 +100,7 @@ class FlutterNfcReaderPlugin(val registrar: Registrar) : MethodCallHandler, Even
         ndef?.close()
         if (message.isNotEmpty()) {
             val data = mapOf(kId to id, kContent to message, kError to "", kStatus to "read")
+            println("Native: put result in main thread")
             activity.runOnUiThread { pendingResult?.success(data) }
         }
     }
